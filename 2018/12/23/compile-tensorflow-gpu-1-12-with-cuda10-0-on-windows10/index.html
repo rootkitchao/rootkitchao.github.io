@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+
+
+
+  
+
+
+<html class="theme-next pisces use-motion" lang="zh-Hans">
+<head>
+  <meta charset="UTF-8"/>
+<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1"/>
+<meta name="theme-color" content="#222">
+
+
+
+
+
+
+
+
+
+<meta http-equiv="Cache-Control" content="no-transform" />
+<meta http-equiv="Cache-Control" content="no-siteapp" />
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+  <link href="/lib/fancybox/source/jquery.fancybox.css?v=2.1.5" rel="stylesheet" type="text/css" />
+
+
+
+
+
+
+
+<link href="/lib/font-awesome/css/font-awesome.min.css?v=4.6.2" rel="stylesheet" type="text/css" />
+
+<link href="/css/main.css?v=5.1.4" rel="stylesheet" type="text/css" />
+
+
+  <link rel="apple-touch-icon" sizes="180x180" href="/images/apple-touch-icon-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="32x32" href="/images/favicon-32x32-next.png?v=5.1.4">
+
+
+  <link rel="icon" type="image/png" sizes="16x16" href="/images/favicon-16x16-next.png?v=5.1.4">
+
+
+  <link rel="mask-icon" href="/images/logo.svg?v=5.1.4" color="#222">
+
+
+
+
+
+  <meta name="keywords" content="Tensorflow,ML," />
+
+
+
+
+
+
+
+
+
+
+<meta name="description" content="背景通过pip直接安装的Tensorflow-GPU是基于CUDA9.0的，并且不支持AVX2指令集,因此打算尝试自行编译基于CUDA10.0并且支持AVX2的Tensorflow-GPU。通过前期调研可知，当前版本的Tensorflow可以编译出基于CUDA10.0的版本。 环境CPU:AMD Ryzen ThreadRipper 1950XRAM:4  DDR4 2400 8GBSSD1:Sa">
+<meta name="keywords" content="Tensorflow,ML">
+<meta property="og:type" content="article">
+<meta property="og:title" content="在Windows10下编译Tensorflow-GPU 1.12 + CUDA10.0">
+<meta property="og:url" content="https://rootkitchao.github.io/2018/12/23/compile-tensorflow-gpu-1-12-with-cuda10-0-on-windows10/index.html">
+<meta property="og:site_name" content="rootkitchao&#39;s notebook">
+<meta property="og:description" content="背景通过pip直接安装的Tensorflow-GPU是基于CUDA9.0的，并且不支持AVX2指令集,因此打算尝试自行编译基于CUDA10.0并且支持AVX2的Tensorflow-GPU。通过前期调研可知，当前版本的Tensorflow可以编译出基于CUDA10.0的版本。 环境CPU:AMD Ryzen ThreadRipper 1950XRAM:4  DDR4 2400 8GBSSD1:Sa">
+<meta property="og:locale" content="zh-Hans">
+<meta property="og:updated_time" content="2018-12-23T16:40:33.955Z">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="在Windows10下编译Tensorflow-GPU 1.12 + CUDA10.0">
+<meta name="twitter:description" content="背景通过pip直接安装的Tensorflow-GPU是基于CUDA9.0的，并且不支持AVX2指令集,因此打算尝试自行编译基于CUDA10.0并且支持AVX2的Tensorflow-GPU。通过前期调研可知，当前版本的Tensorflow可以编译出基于CUDA10.0的版本。 环境CPU:AMD Ryzen ThreadRipper 1950XRAM:4  DDR4 2400 8GBSSD1:Sa">
+
+
+
+<script type="text/javascript" id="hexo.configurations">
+  var NexT = window.NexT || {};
+  var CONFIG = {
+    root: '/',
+    scheme: 'Pisces',
+    version: '5.1.4',
+    sidebar: {"position":"left","display":"always","offset":12,"b2t":false,"scrollpercent":false,"onmobile":false},
+    fancybox: true,
+    tabs: true,
+    motion: {"enable":true,"async":false,"transition":{"post_block":"fadeIn","post_header":"slideDownIn","post_body":"slideDownIn","coll_header":"slideLeftIn","sidebar":"slideUpIn"}},
+    duoshuo: {
+      userId: '0',
+      author: '博主'
+    },
+    algolia: {
+      applicationID: '',
+      apiKey: '',
+      indexName: '',
+      hits: {"per_page":10},
+      labels: {"input_placeholder":"Search for Posts","hits_empty":"We didn't find any results for the search: ${query}","hits_stats":"${hits} results found in ${time} ms"}
+    }
+  };
+</script>
+
+
+
+  <link rel="canonical" href="https://rootkitchao.github.io/2018/12/23/compile-tensorflow-gpu-1-12-with-cuda10-0-on-windows10/"/>
+
+
+
+
+
+  <title>在Windows10下编译Tensorflow-GPU 1.12 + CUDA10.0 | rootkitchao's notebook</title>
+  
+
+
+
+
+
+
+
+
+</head>
+
+<body itemscope itemtype="http://schema.org/WebPage" lang="zh-Hans">
+
+  
+  
+    
+  
+
+  <div class="container sidebar-position-left page-post-detail">
+    <div class="headband"></div>
+
+    <header id="header" class="header" itemscope itemtype="http://schema.org/WPHeader">
+      <div class="header-inner"><div class="site-brand-wrapper">
+  <div class="site-meta ">
+    
+
+    <div class="custom-logo-site-title">
+      <a href="/"  class="brand" rel="start">
+        <span class="logo-line-before"><i></i></span>
+        <span class="site-title">rootkitchao's notebook</span>
+        <span class="logo-line-after"><i></i></span>
+      </a>
+    </div>
+      
+        <p class="site-subtitle"></p>
+      
+  </div>
+
+  <div class="site-nav-toggle">
+    <button>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+      <span class="btn-bar"></span>
+    </button>
+  </div>
+</div>
+
+<nav class="site-nav">
+  
+
+  
+    <ul id="menu" class="menu">
+      
+        
+        <li class="menu-item menu-item-home">
+          <a href="/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-home"></i> <br />
+            
+            首页
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-about">
+          <a href="/about/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-user"></i> <br />
+            
+            关于
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-tags">
+          <a href="/tags/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-tags"></i> <br />
+            
+            标签
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-categories">
+          <a href="/categories/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-th"></i> <br />
+            
+            分类
+          </a>
+        </li>
+      
+        
+        <li class="menu-item menu-item-archives">
+          <a href="/archives/" rel="section">
+            
+              <i class="menu-item-icon fa fa-fw fa-archive"></i> <br />
+            
+            归档
+          </a>
+        </li>
+      
+
+      
+    </ul>
+  
+
+  
+</nav>
+
+
+
+ </div>
+    </header>
+
+    <main id="main" class="main">
+      <div class="main-inner">
+        <div class="content-wrap">
+          <div id="content" class="content">
+            
+
+  <div id="posts" class="posts-expand">
+    
+
+  
+
+  
+  
+  
+
+  <article class="post post-type-normal" itemscope itemtype="http://schema.org/Article">
+  
+  
+  
+  <div class="post-block">
+    <link itemprop="mainEntityOfPage" href="https://rootkitchao.github.io/2018/12/23/compile-tensorflow-gpu-1-12-with-cuda10-0-on-windows10/">
+
+    <span hidden itemprop="author" itemscope itemtype="http://schema.org/Person">
+      <meta itemprop="name" content="rootkitchao">
+      <meta itemprop="description" content="">
+      <meta itemprop="image" content="/images/avatar.gif">
+    </span>
+
+    <span hidden itemprop="publisher" itemscope itemtype="http://schema.org/Organization">
+      <meta itemprop="name" content="rootkitchao's notebook">
+    </span>
+
+    
+      <header class="post-header">
+
+        
+        
+          <h1 class="post-title" itemprop="name headline">在Windows10下编译Tensorflow-GPU 1.12 + CUDA10.0</h1>
+        
+
+        <div class="post-meta">
+          <span class="post-time">
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-calendar-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">发表于</span>
+              
+              <time title="创建于" itemprop="dateCreated datePublished" datetime="2018-12-23T23:21:28+08:00">
+                2018-12-23
+              </time>
+            
+
+            
+
+            
+          </span>
+
+          
+            <span class="post-category" >
+            
+              <span class="post-meta-divider">|</span>
+            
+              <span class="post-meta-item-icon">
+                <i class="fa fa-folder-o"></i>
+              </span>
+              
+                <span class="post-meta-item-text">分类于</span>
+              
+              
+                <span itemprop="about" itemscope itemtype="http://schema.org/Thing">
+                  <a href="/categories/Machine-Learing/" itemprop="url" rel="index">
+                    <span itemprop="name">Machine Learing</span>
+                  </a>
+                </span>
+
+                
+                
+              
+            </span>
+          
+
+          
+            
+          
+
+          
+          
+
+          
+
+          
+
+          
+
+        </div>
+      </header>
+    
+
+    
+    
+    
+    <div class="post-body" itemprop="articleBody">
+
+      
+      
+
+      
+        <h2 id="背景"><a href="#背景" class="headerlink" title="背景"></a>背景</h2><p>通过pip直接安装的Tensorflow-GPU是基于CUDA9.0的，并且不支持AVX2指令集,因此打算尝试自行编译基于CUDA10.0并且支持AVX2的Tensorflow-GPU。<br>通过前期调研可知，当前版本的Tensorflow可以编译出基于CUDA10.0的版本。</p>
+<h2 id="环境"><a href="#环境" class="headerlink" title="环境"></a>环境</h2><p>CPU:AMD Ryzen ThreadRipper 1950X<br>RAM:4 <em> DDR4 2400 8GB<br>SSD1:Samsung 970Pro 512GB<br>SSD2:Samsung 960Pro 512GB<br>GPU:NVIDIA Geforce RTX2080TI 11GB </em> 2<br>PSU:EVGA 1600 G2<br>SYS:Windows 10 x64 1809 build 17763</p>
+<h2 id="准备工作"><a href="#准备工作" class="headerlink" title="准备工作"></a>准备工作</h2><ul>
+<li>阅读Tensorflow网站上的相关内容，了解编译相关的步骤，国内可以访问：<a href="https://tensorflow.google.cn/install/source" target="_blank" rel="noopener">https://tensorflow.google.cn/install/source</a></li>
+<li><p>下载相关的软件</p>
+<ul>
+<li>NVIDIA CUDA 10.0 for Windows10</li>
+<li>NVIDIA cuDNN 7.4 for CUDA 10.0</li>
+<li>Google bazel 0.20.0 for Windows X64</li>
+<li>MSYS2</li>
+<li>Microsoft Visual C++ 2015 Redistributable Update 3</li>
+<li>Microsoft Build Tools 2015 Update 3</li>
+</ul>
+</li>
+<li>安装相关软件</li>
+<li>Tensorflow 源码</li>
+</ul>
+<p>其中cuDNN要注册一个NVIDIA的开发者账号才能下载，正常注册即可。对于bazel的版本选择，TF的网站上写着经过测试的编译工具版本是0.15.0，但是实际上当前从master branch获取的TF已经不支持这个版本了。查看Tensorflow的Github页面上的Continuous build status，找到Windows GPU这一项点进去看日志，会发现Google使用的是0.20.0，选择一样的版本可以减小出问题的可能性。<br>另外Google内部使用的编译工具似乎和网站上提供的不完全一致……可能会出现提供了相关发行版本但是自己无论如何都编译不出来的情况。<br>我直接从Github上download了master分支，大概对应的是commit cd8c6c995e0b29e793854e712d2fbd683b5cbd3f</p>
+<h2 id="完成编译配置"><a href="#完成编译配置" class="headerlink" title="完成编译配置"></a>完成编译配置</h2><p>根据Tensorflow网站上的建议，CD到解压后的源码目录，执行python ./configure.py：</p>
+<ul>
+<li>禁用XLA，当前版本的Tensorflow-GPU在Windows上编译如果启用了XLA会遇到问题</li>
+<li>CUDA版本输入10.0</li>
+<li>cuDNN版本输入7.4</li>
+<li>附加的编译选项输入/arch:AVX2</li>
+<li>GPU计算能力根据自己的硬件情况设置，RTX2080TI对应的是7.5，这里最大只能输入7.0（对应Titan V），于是只能输入7.0</li>
+</ul>
+<p>另外在Github上看到的一些讨论，目前编译Tensorflow的时候启用AVX512会遇到编译问题，我的CPU不支持AVX512，暂时没有测试。目前支持AVX512F的CPU只有Skylake-SP、CannonLake-U（仅发布极少数OEM型号）、IceLake（只有样品展出）。</p>
+<h2 id="编译、报错、提交issue"><a href="#编译、报错、提交issue" class="headerlink" title="编译、报错、提交issue"></a>编译、报错、提交issue</h2><p>执行命令：bazel build –config=opt –config=cuda –copt=-nvcc_options=disable-warnings –define=no_tensorflow_py_deps=true //tensorflow/tools/pip_package:build_pip_package<br>开始编译，结果跑了一段时间之后报错（这时候用的代码还是r1.12分支，不是最新的）：<br><figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br></pre></td><td class="code"><pre><span class="line">.\tensorflow/compiler/tf2xla/cpu_function_runtime.h(71): error C2338:</span><br><span class="line">......</span><br><span class="line">Target //tensorflow/tools/pip_package:build_pip_package failed to build</span><br><span class="line">INFO: Elapsed time: 97.739s, Critical Path: 37.10s</span><br><span class="line">INFO: 234 processes: 234 local.</span><br><span class="line">FAILED: Build did NOT complete successfully</span><br></pre></td></tr></table></figure></p>
+<p>报错的文件是源码中（而不是protobuf生成的），进去看了一下相关代码：<br><figure class="highlight c++"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">private</span>:</span><br><span class="line">  BufferInfo() = <span class="keyword">default</span>;</span><br><span class="line"></span><br><span class="line">  <span class="keyword">enum</span> <span class="class"><span class="keyword">class</span> <span class="title">Kind</span> :</span> <span class="keyword">unsigned</span> &#123;</span><br><span class="line">    kConstant,</span><br><span class="line">    kTempBuffer,</span><br><span class="line">    kEntryParamete</span><br></pre></td></tr></table></figure></p>
+<p>似乎没啥问题，到Github上提交了一个issue，得到了解释：<br>This is because MSVC does not merge bit-fields if the size of the types are different (4 bytes for kind_, 8 bytes for size_).<br>并且开发人员修正了这个问题。之后下载了更新的源码，禁用XLA之后编译通过。<br>编译非常耗费时间，在我的硬件上（16核32线程的CPU，4通道DDR4内存，PCI-E接口的SSD）依然耗费了7937秒，并且相当一段时间CPU占用达到了100%，似乎普遍反映编译要3-4个小时，不知道bazel是否支持NUMA模式，有多路CPU的童鞋可以试试。</p>
+<h2 id="编译时候可能遇到的问题："><a href="#编译时候可能遇到的问题：" class="headerlink" title="编译时候可能遇到的问题："></a>编译时候可能遇到的问题：</h2><ul>
+<li>编译开始时提示一个位于user目录下的文件没有访问权限：bazel的缓存文件似乎不会自己清除，自己去删掉，有时候自己删也有占用的问题，重启系统才行，似乎bazel shutdown或者bazel clean命令也没什么效果。建议每次遇到编译失败，都手动清理一次。</li>
+<li>编译结束开始连接的时候提示没有权限执行bash.exe：用管理员身份运行cmd执行编译</li>
+</ul>
+<h2 id="打包安装"><a href="#打包安装" class="headerlink" title="打包安装"></a>打包安装</h2><p>执行命令：bazel-bin\tensorflow\tools\pip_package\build_pip_package C:/tmp/tensorflow_pkg，生成打包好的tensorflow-1.12.0-cp36-cp36m-win_amd64.whl文件，之后pip3 install 安装即可</p>
+<h2 id="性能测试"><a href="#性能测试" class="headerlink" title="性能测试"></a>性能测试</h2><p>使用tensorflow/benchmark跑了几个常见的网络，具体数据懒得贴了。和之前的环境相比仅仅升级了CUDA（从CUDA9.0+ Patch 4）相比，FP16下的性能提高了15%-25%，FP32性能没变化（驱动版本为417.22）。</p>
+
+      
+    </div>
+    
+    
+    
+
+    
+
+    
+
+    
+
+    <footer class="post-footer">
+      
+        <div class="post-tags">
+          
+            <a href="/tags/Tensorflow/" rel="tag"># Tensorflow</a>
+          
+            <a href="/tags/ML/" rel="tag"># ML</a>
+          
+        </div>
+      
+
+      
+      
+      
+
+      
+        <div class="post-nav">
+          <div class="post-nav-next post-nav-item">
+            
+              <a href="/2018/09/22/Tensorflow-Object-Detection-API/" rel="next" title="Tensorflow Object Detection API">
+                <i class="fa fa-chevron-left"></i> Tensorflow Object Detection API
+              </a>
+            
+          </div>
+
+          <span class="post-nav-divider"></span>
+
+          <div class="post-nav-prev post-nav-item">
+            
+          </div>
+        </div>
+      
+
+      
+      
+    </footer>
+  </div>
+  
+  
+  
+  </article>
+
+
+
+    <div class="post-spread">
+      
+    </div>
+  </div>
+
+
+          </div>
+          
+
+
+          
+
+  
+
+
+
+        </div>
+        
+          
+  
+  <div class="sidebar-toggle">
+    <div class="sidebar-toggle-line-wrap">
+      <span class="sidebar-toggle-line sidebar-toggle-line-first"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-middle"></span>
+      <span class="sidebar-toggle-line sidebar-toggle-line-last"></span>
+    </div>
+  </div>
+
+  <aside id="sidebar" class="sidebar">
+    
+    <div class="sidebar-inner">
+
+      
+
+      
+        <ul class="sidebar-nav motion-element">
+          <li class="sidebar-nav-toc sidebar-nav-active" data-target="post-toc-wrap">
+            文章目录
+          </li>
+          <li class="sidebar-nav-overview" data-target="site-overview-wrap">
+            站点概览
+          </li>
+        </ul>
+      
+
+      <section class="site-overview-wrap sidebar-panel">
+        <div class="site-overview">
+          <div class="site-author motion-element" itemprop="author" itemscope itemtype="http://schema.org/Person">
+            
+              <p class="site-author-name" itemprop="name">rootkitchao</p>
+              <p class="site-description motion-element" itemprop="description">ML+CV & Windows Kernel</p>
+          </div>
+
+          <nav class="site-state motion-element">
+
+            
+              <div class="site-state-item site-state-posts">
+              
+                <a href="/archives/">
+              
+                  <span class="site-state-item-count">3</span>
+                  <span class="site-state-item-name">日志</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-categories">
+                <a href="/categories/index.html">
+                  <span class="site-state-item-count">2</span>
+                  <span class="site-state-item-name">分类</span>
+                </a>
+              </div>
+            
+
+            
+              
+              
+              <div class="site-state-item site-state-tags">
+                <a href="/tags/index.html">
+                  <span class="site-state-item-count">4</span>
+                  <span class="site-state-item-name">标签</span>
+                </a>
+              </div>
+            
+
+          </nav>
+
+          
+
+          
+
+          
+          
+
+          
+          
+
+          
+
+        </div>
+      </section>
+
+      
+      <!--noindex-->
+        <section class="post-toc-wrap motion-element sidebar-panel sidebar-panel-active">
+          <div class="post-toc">
+
+            
+              
+            
+
+            
+              <div class="post-toc-content"><ol class="nav"><li class="nav-item nav-level-2"><a class="nav-link" href="#背景"><span class="nav-number">1.</span> <span class="nav-text">背景</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#环境"><span class="nav-number">2.</span> <span class="nav-text">环境</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#准备工作"><span class="nav-number">3.</span> <span class="nav-text">准备工作</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#完成编译配置"><span class="nav-number">4.</span> <span class="nav-text">完成编译配置</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编译、报错、提交issue"><span class="nav-number">5.</span> <span class="nav-text">编译、报错、提交issue</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#编译时候可能遇到的问题："><span class="nav-number">6.</span> <span class="nav-text">编译时候可能遇到的问题：</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#打包安装"><span class="nav-number">7.</span> <span class="nav-text">打包安装</span></a></li><li class="nav-item nav-level-2"><a class="nav-link" href="#性能测试"><span class="nav-number">8.</span> <span class="nav-text">性能测试</span></a></li></ol></div>
+            
+
+          </div>
+        </section>
+      <!--/noindex-->
+      
+
+      
+
+    </div>
+  </aside>
+
+
+        
+      </div>
+    </main>
+
+    <footer id="footer" class="footer">
+      <div class="footer-inner">
+        <div class="copyright">&copy; <span itemprop="copyrightYear">2018</span>
+  <span class="with-love">
+    <i class="fa fa-user"></i>
+  </span>
+  <span class="author" itemprop="copyrightHolder">rootkitchao</span>
+
+  
+</div>
+
+
+  <div class="powered-by">由 <a class="theme-link" target="_blank" href="https://hexo.io">Hexo</a> 强力驱动</div>
+
+
+
+  <span class="post-meta-divider">|</span>
+
+
+
+  <div class="theme-info">主题 &mdash; <a class="theme-link" target="_blank" href="https://github.com/iissnan/hexo-theme-next">NexT.Pisces</a> v5.1.4</div>
+
+
+
+
+        
+
+
+
+
+
+
+
+        
+      </div>
+    </footer>
+
+    
+      <div class="back-to-top">
+        <i class="fa fa-arrow-up"></i>
+        
+      </div>
+    
+
+    
+
+  </div>
+
+  
+
+<script type="text/javascript">
+  if (Object.prototype.toString.call(window.Promise) !== '[object Function]') {
+    window.Promise = null;
+  }
+</script>
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery/index.js?v=2.1.3"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fastclick/lib/fastclick.min.js?v=1.0.6"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/jquery_lazyload/jquery.lazyload.js?v=1.9.7"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/velocity/velocity.ui.min.js?v=1.2.1"></script>
+  
+
+  
+  
+    <script type="text/javascript" src="/lib/fancybox/source/jquery.fancybox.pack.js?v=2.1.5"></script>
+  
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/utils.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/motion.js?v=5.1.4"></script>
+
+
+
+  
+  
+
+
+  <script type="text/javascript" src="/js/src/affix.js?v=5.1.4"></script>
+
+  <script type="text/javascript" src="/js/src/schemes/pisces.js?v=5.1.4"></script>
+
+
+
+  
+  <script type="text/javascript" src="/js/src/scrollspy.js?v=5.1.4"></script>
+<script type="text/javascript" src="/js/src/post-details.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  <script type="text/javascript" src="/js/src/bootstrap.js?v=5.1.4"></script>
+
+
+
+  
+
+
+  
+
+
+
+
+	
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+
+
+  
+
+  
+
+  
+
+  
+  
+
+  
+
+  
+
+  
+
+</body>
+</html>
